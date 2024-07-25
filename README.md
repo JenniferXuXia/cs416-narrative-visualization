@@ -1,1 +1,1 @@
-# cs416-narrative-visualization
+# CS 416 Narrative Visualization Project
