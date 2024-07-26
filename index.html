@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Jennifer Xia">
+    <title>Billie Eilish Musical Visualization</title>
+
+    <!-- D3 library -->
+    <script src='https://d3js.org/d3.v5.min.js'></script>
+    <!-- D3 Annotations library -->
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+    <!-- Helpers -->
+    <script>
+        function calculateMean(data, key) {
+            return d3.mean(data, d => d[key]);
+        }
+
+        function filterByAlbum(data, album) {
+            return data.filter(d => d.album == album);
+        }
+
+        function meansForFeature(data, feature) {
+            let means = [];
+            for (let i = 0; i < albums.length; i++) {
+                let albumData = filterByAlbum(data, albums[i]);
+                let mean = calculateMean(albumData, feature);
+                means.push(mean);
+            }
+            return means;
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        // global variables for saving parameters and data
+        let albums = ["WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?", "Happier Than Ever", "HIT ME HARD AND SOFT"];
+        let features = ["energy", "danceability", "valence", "acousticness", "speechiness", "tempo"];
+        
+        // chart constants
+        let width = 300;
+        let height = 530;
+        let margin = {top: 20, right: 20, bottom: 20, left: 20};
+    
+        // visualization functions
+        function drawMeanFeatureChart(data, feature) {
+            let means = meansForFeature(data, feature);
+
+            let xScale = d3.scaleBand()
+                .domain(albums)
+                .range([margin.left, width - margin.right])
+                .padding(0.1);
+
+            let yScale = d3.scaleLinear()
+                .domain([0, d3.max(means)])
+                .range([height - margin.bottom, margin.top]);
+
+            let svg = d3.select("#chart2");
+
+            svg.selectAll("*").remove();
+
+            svg.append("g")
+                .selectAll("rect")
+                .data(means)
+                .enter()
+                .append("rect")
+                .attr("x", (d, i) => xScale(albums[i]))
+                .attr("y", d => yScale(d))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - margin.bottom - yScale(d))
+                .attr("fill", "steelblue");
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "16px")
+                .text(`Mean ${capitalize(feature)} Per Album`);
+
+        }
+
+        function drawAlbumFeatureChart(data, album, feature) {
+            let albumData = filterByAlbum(data, album);
+
+            let xScale = d3.scaleBand()
+                .domain(albumData.map(d => d.track_number))
+                .range([margin.left, width - margin.right])
+                .padding(0.1);
+
+            let yScale = d3.scaleLinear()
+                .domain([0, d3.max(albumData, d => d[feature])])
+                .range([height - margin.bottom, margin.top]);
+
+            let svg = d3.select("#chart1");
+
+            svg.selectAll("*").remove();
+
+            svg.append("g")
+                .selectAll("rect")
+                .data(albumData)
+                .enter()
+                .append("rect")
+                .attr("x", d => xScale(d.track_number))
+                .attr("y", d => yScale(d[feature]))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - margin.bottom - yScale(d[feature]))
+                .attr("fill", "steelblue");
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(xScale));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(yScale));
+
+            svg.append("text")
+                .attr("x", (width / 2))
+                .attr("y", (margin.top / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "16px")
+                .text(`Feature Measurement Per Track in ${album}`);
+        }
+
+        // main visualization function
+        async function init() {
+            let data = await d3.csv("data/billie_eilish_discography.csv");
+            drawMeanFeatureChart(data, features[0]);
+            drawAlbumFeatureChart(data, albums[0], features[0]);
+
+            document.getElementById("feature-select").addEventListener("change", function() {
+                drawMeanFeatureChart(data, document.querySelector('input[name="feature"]:checked').value);
+                drawAlbumFeatureChart(data, document.getElementById("album-select").value, document.querySelector('input[name="feature"]:checked').value);
+            });
+
+            document.getElementById("album-select").addEventListener("change", function() {
+                drawAlbumFeatureChart(data, this.value, document.querySelector('input[name="feature"]:checked').value);
+            });
+        }
+
+        // run init function once the DOM is loaded
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</head>
+<body>
+    <div class="container body-container">
+        <h1>Billie Eilish Musical Visualization</h1>
+        <p>A CS 416 Narrative Visualization by Jennifer Xia</p>
+
+        <div id="intro">
+            <h2>Introduction</h2>
+            <p>Since her debut with her widely-acclaimed single "Ocean Eyes" in 2016, Billie Eilish has demonstrated versatility and range within a soundscape that is still unmistakeably her own. Throughout her career, Billie has released three albums: WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?, Happier Than Ever, and HIT ME HARD AND SOFT. </p>
+            <small>Dataset: <a href="https://example.com/" target="_blank"></a></small>
+            <hr>
+        </div>
+
+        <div class="viz-container">
+            <div class="features-layout">
+                <h2>Features</h2>
+                <p>Choose a feature to visualize:</p>
+                <div id="feature-select" class="radio-items">
+                    <input type="radio" id="energy" name="feature" value="energy" checked>
+                    <label for="energy">Energy</label><br>
+                    <input type="radio" id="danceability" name="feature" value="danceability">
+                    <label for="danceability">Danceability</label><br>
+                    <input type="radio" id="valence" name="feature" value="valence">
+                    <label for="valence">Valence</label><br>
+                    <input type="radio" id="acousticness" name="feature" value="acousticness">
+                    <label for="acousticness">Acousticness</label><br>
+                    <input type="radio" id="speechiness" name="feature" value="speechiness">
+                    <label for="speechiness">Speechiness</label><br>
+                    <input type="radio" id="tempo" name="feature" value="tempo">
+                    <label for="tempo">Tempo</label><br>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div style="text-align: center;">
+                        <select id="album-select" name="album">
+                            <option value="WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?">WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?</option>
+                            <option value="Happier Than Ever">Happier Than Ever</option>
+                            <option value="HIT ME HARD AND SOFT">HIT ME HARD AND SOFT</option>
+                        </select>
+                        <h3>Feature Measurement Per Track</h3>
+                        <svg id="chart1" width="660" height="530" viewBox="0 0 660 530">
+                        </svg>
+                    </div>
+                </div>
+                <div class="col">
+                    <div style="text-align: center;">
+                        <h3>Mean Feature Measurement Per Album</h3>
+                        <svg id="chart2" width="660" height="530" viewBox="0 0 660 530">
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
