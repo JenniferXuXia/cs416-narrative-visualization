@@ -55,14 +55,13 @@ function updateFeatureDescription(feature) {
     document.getElementById("feature-description").innerHTML = feature_description[feature];
 }
 
-function updateBarOnClick() {
-    var selectedElement = d3.select(this).data()[0];
-    var selectedIdx = d3.selectAll(".album-bar").data().indexOf(selectedElement);
+function updateBarOnMouseover(barElement) {
+    let selectedIdx = Array.from(document.getElementsByClassName("album-bar")).indexOf(barElement);
 
     d3.selectAll(".album-bar")
         .style("opacity", "50%");
 
-    d3.select(this)
+    d3.select(barElement)
         .style("opacity", "100%");
 
     d3.selectAll(".album-label")
@@ -192,13 +191,13 @@ async function init() {
         updateAlbumChart(data, selectedFeature);
         updateTrackChart(data, selectedAlbum, selectedFeature);
         updateFeatureDescription(selectedFeature);
-        updateBarOnClick.call(document.getElementsByClassName("album-bar")[albums.indexOf(selectedAlbum)]);
+        updateBarOnMouseover(document.getElementsByClassName("album-bar")[albums.indexOf(selectedAlbum)]);
 
         // update by-track chart based on album change (click) trigger
         Array.from(document.getElementsByClassName("album-bar")).forEach(bar => {
             // event listener for each bar in mean feature per album bar chart
             bar.addEventListener("mouseover", function() {
-                let selectedIdx = updateBarOnClick.call(this);
+                let selectedIdx = updateBarOnMouseover(this);
                 selectedAlbum = albums[selectedIdx];
 
                 updateTrackChart(data, selectedAlbum, selectedFeature);
@@ -208,7 +207,6 @@ async function init() {
 
     // initialize graphs and descriptions
     updateScene();
-    updateBarOnClick.call(document.getElementsByClassName("album-bar")[0]);
 
     // event listener for feature radio items
     document.getElementById("feature-select").addEventListener("change", function() {
