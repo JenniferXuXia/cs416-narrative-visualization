@@ -1,7 +1,12 @@
 // global variables for saving parameters and data
 let albums = ["WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?", "Happier Than Ever", "HIT ME HARD AND SOFT"];
-let features = ["energy", "danceability", "valence", "acousticness", "speechiness", "tempo"];
+let album_color = {
+    "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?": "#292520",
+    "Happier Than Ever": "#e7ab96",
+    "HIT ME HARD AND SOFT": "#0e3552"
+}
 
+let features = ["energy", "danceability", "valence", "acousticness", "speechiness", "tempo"];
 let feature_range = {
     "energy": [0, 1],
     "danceability": [0, 1],
@@ -10,7 +15,6 @@ let feature_range = {
     "speechiness": [0, 1],
     "tempo": [0, 200]
 }
-
 let feature_description = {
     "energy": "Energy represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy. A value of 0.0 is least energetic and 1.0 is most energetic.",
     "danceability": "Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.",
@@ -20,11 +24,7 @@ let feature_description = {
     "tempo": "The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration."
 }
 
-let album_color = {
-    "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?": "#292520",
-    "Happier Than Ever": "#e7ab96",
-    "HIT ME HARD AND SOFT": "#0e3552"
-}
+let margin = {top: 50, right: 50, bottom: 100, left: 50};
 
 // string formatting
 function capitalize(str) {
@@ -50,15 +50,30 @@ function meansForFeature(data, feature) {
     return means;
 }
 
-// updating text
+// visualization and interface functions
 function updateFeatureDescription(feature) {
     document.getElementById("feature-description").innerHTML = feature_description[feature];
 }
 
-// chart constants
-let margin = {top: 50, right: 50, bottom: 100, left: 50};
+function updateBarOnClick() {
+    var selectedElement = d3.select(this).data()[0];
+    var selectedIdx = d3.selectAll(".album-bar").data().indexOf(selectedElement);
 
-// visualization functions
+    d3.selectAll(".album-bar")
+        .style("opacity", "50%");
+
+    d3.select(this)
+        .style("opacity", "100%");
+
+    d3.selectAll(".album-label")
+        .style("font-weight", function (d, i) {
+            if (i == selectedIdx) { return "bold"; }
+            return "normal";
+        })
+    
+    return selectedIdx;
+}
+
 function updateAlbumChart(data, feature) {
     width = document.getElementById("by-album-chart").width.baseVal.value;
     height = document.getElementById("by-album-chart").height.baseVal.value;
@@ -83,16 +98,18 @@ function updateAlbumChart(data, feature) {
         .data(means)
         .enter()
         .append("rect")
+        .attr("class", "album-bar")
         .attr("x", (d, i) => xScale(albums[i]))
         .attr("y", d => yScale(d))
         .attr("width", xScale.bandwidth())
         .attr("height", d => height - margin.bottom - yScale(d))
-        .attr("fill", (d, i) => album_color[albums[i]]);
+        .attr("fill", (d, i) => album_color[albums[i]])
 
     svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom(xScale))
         .selectAll("text")
+        .attr("class", "album-label")
         .attr("transform", "rotate(-45)")
         .style("text-anchor", "end");
 
@@ -163,22 +180,38 @@ function updateTrackChart(data, album, feature) {
 async function init() {
     let data = await d3.csv("data/billie_eilish_discography.csv");
 
-    // initialize values
-    updateAlbumChart(data, features[0]);
-    updateTrackChart(data, albums[0], features[0]);
-    updateFeatureDescription(features[0]);
+    // selected variables
+    let selectedFeature = features[0]
+    let selectedAlbum = albums[0]
 
-    // event listeners
-    document.getElementById("feature-select").addEventListener("change", function() {
-        let selectedFeature = document.querySelector('input[name="feature"]:checked').value;
+    function updateScene() {
+        // selected feature is the main parameter that changes the graphs in each scene
+        selectedFeature = document.querySelector('input[name="feature"]:checked').value;
 
+        // update each graph and description based on feature selection (radio item) trigger
         updateAlbumChart(data, selectedFeature);
-        updateTrackChart(data, document.getElementById("album-select").value, document.querySelector('input[name="feature"]:checked').value);
-
+        updateTrackChart(data, selectedAlbum, selectedFeature);
         updateFeatureDescription(selectedFeature);
-    });
+        updateBarOnClick.call(document.getElementsByClassName("album-bar")[albums.indexOf(selectedAlbum)]);
 
-    document.getElementById("album-select").addEventListener("change", function() {
-        updateTrackChart(data, this.value, document.querySelector('input[name="feature"]:checked').value);
+        // update by-track chart based on album change (click) trigger
+        Array.from(document.getElementsByClassName("album-bar")).forEach(bar => {
+            // event listener for each bar in mean feature per album bar chart
+            bar.addEventListener("mouseover", function() {
+                let selectedIdx = updateBarOnClick.call(this);
+                selectedAlbum = albums[selectedIdx];
+
+                updateTrackChart(data, selectedAlbum, selectedFeature);
+            });
+        });
+    }
+
+    // initialize graphs and descriptions
+    updateScene();
+    updateBarOnClick.call(document.getElementsByClassName("album-bar")[0]);
+
+    // event listener for feature radio items
+    document.getElementById("feature-select").addEventListener("change", function() {
+        updateScene();
     });
 }

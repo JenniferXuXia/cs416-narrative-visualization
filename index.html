@@ -19,8 +19,12 @@
 
 <body onload="init()">
     <div class="container body-container">
-        <h1>Billie Eilish Musical Visualization</h1>
-        <p>A Narrative Visualization by Jennifer Xia</p>
+        <div class="header">
+            <h1>The Evolution of Billie Eilish's Music</h1>
+            <h3>A Narrative Visualization Across 3 Albums</h3>
+            <p>Created by Jennifer Xia</p>
+            <hr>
+        </div>
 
         <div id="intro">
             <h2>Introduction</h2>
@@ -30,36 +34,30 @@
         </div>
 
         <div class="viz-container">
-            <div class="row navigation">
-                <div>
-                    <h2>Audio Features</h2>
+            <div class="feature-container">
+                <div class="row navigation">
+                    <div>
+                        <h2>Audio Features</h2>
+                    </div>
+                    <div id="feature-select" class="radio-items">
+                        <input type="radio" id="energy" name="feature" value="energy" checked>
+                        <label for="energy">Energy</label><br>
+                        <input type="radio" id="danceability" name="feature" value="danceability">
+                        <label for="danceability">Danceability</label><br>
+                        <input type="radio" id="valence" name="feature" value="valence">
+                        <label for="valence">Valence</label><br>
+                        <input type="radio" id="acousticness" name="feature" value="acousticness">
+                        <label for="acousticness">Acousticness</label><br>
+                        <input type="radio" id="speechiness" name="feature" value="speechiness">
+                        <label for="speechiness">Speechiness</label><br>
+                        <input type="radio" id="tempo" name="feature" value="tempo">
+                        <label for="tempo">Tempo</label><br>
+                    </div>
                 </div>
-                <div id="feature-select" class="radio-items">
-                    <input type="radio" id="energy" name="feature" value="energy" checked>
-                    <label for="energy">Energy</label><br>
-                    <input type="radio" id="danceability" name="feature" value="danceability">
-                    <label for="danceability">Danceability</label><br>
-                    <input type="radio" id="valence" name="feature" value="valence">
-                    <label for="valence">Valence</label><br>
-                    <input type="radio" id="acousticness" name="feature" value="acousticness">
-                    <label for="acousticness">Acousticness</label><br>
-                    <input type="radio" id="speechiness" name="feature" value="speechiness">
-                    <label for="speechiness">Speechiness</label><br>
-                    <input type="radio" id="tempo" name="feature" value="tempo">
-                    <label for="tempo">Tempo</label><br>
+                <div class="row" style="height: 100px;">
+                    <p id="feature-description"></p>
                 </div>
-            </div>
-            <div class="row" style="height: 100px;">
-                <p id="feature-description"></p>
                 <hr>
-            </div>
-            
-            <div class="row" style="height: 100px;">
-                <select id="album-select" name="album">
-                    <option value="WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?">WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?</option>
-                    <option value="Happier Than Ever">Happier Than Ever</option>
-                    <option value="HIT ME HARD AND SOFT">HIT ME HARD AND SOFT</option>
-                </select>
             </div>
 
             <div class="row", style="text-align: center;">
