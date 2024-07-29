@@ -1,13 +1,13 @@
 // global variables for saving parameters and data
-let albums = ["WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?", "Happier Than Ever", "HIT ME HARD AND SOFT"];
-let album_color = {
+const albums = ["WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?", "Happier Than Ever", "HIT ME HARD AND SOFT"];
+const album_color = {
     "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?": "#292520",
     "Happier Than Ever": "#e7ab96",
     "HIT ME HARD AND SOFT": "#0e3552"
 }
 
-let features = ["energy", "danceability", "valence", "acousticness", "speechiness", "tempo"];
-let feature_range = {
+const features = ["energy", "danceability", "valence", "acousticness", "speechiness", "tempo"];
+const feature_range = {
     "energy": [0, 1],
     "danceability": [0, 1],
     "valence": [0, 1],
@@ -15,7 +15,7 @@ let feature_range = {
     "speechiness": [0, 1],
     "tempo": [0, 200]
 }
-let feature_description = {
+const feature_description = {
     "energy": "Energy represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy. A value of 0.0 is least energetic and 1.0 is most energetic.",
     "danceability": "Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.",
     "valence": "Valence describes the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g., happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g., sad, depressed, angry). A value of 0.0 is least positive and 1.0 is most positive.",
@@ -24,7 +24,7 @@ let feature_description = {
     "tempo": "The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration."
 }
 
-let margin = {top: 50, right: 50, bottom: 100, left: 50};
+const margin = {top: 100, right: 50, bottom: 100, left: 50};
 
 // string formatting
 function capitalize(str) {
@@ -77,7 +77,8 @@ function updateAlbumChart(data, feature) {
     width = document.getElementById("by-album-chart").width.baseVal.value;
     height = document.getElementById("by-album-chart").height.baseVal.value;
 
-    let means = meansForFeature(data, feature);
+    let albumMeans = meansForFeature(data, feature);
+    console.log(`Album means for ${feature}: ${albumMeans}`);
 
     let xScale = d3.scaleBand()
         .domain(albums)
@@ -94,7 +95,7 @@ function updateAlbumChart(data, feature) {
 
     svg.append("g")
         .selectAll("rect")
-        .data(means)
+        .data(albumMeans)
         .enter()
         .append("rect")
         .attr("class", "album-bar")
@@ -120,9 +121,10 @@ function updateAlbumChart(data, feature) {
         .attr("x", (width / 2))
         .attr("y", (margin.top / 2))
         .attr("text-anchor", "middle")
-        .style("font-size", "16px")
+        .style("font-size", "24px")
         .text(`Mean ${capitalize(feature)} per Album`);
-
+    
+    updateAlbumChartAnnotations(svg, feature, xScale, yScale, albumMeans);
 }
 
 function updateTrackChart(data, album, feature) {
@@ -171,8 +173,127 @@ function updateTrackChart(data, album, feature) {
         .attr("x", (width / 2))
         .attr("y", (margin.top / 2))
         .attr("text-anchor", "middle")
-        .style("font-size", "16px")
+        .style("font-size", "24px")
         .text(`${capitalize(feature)} Per Track`);
+}
+
+function drawAlbumPath(svg, xScale, yScale, albumMeans, verticalOffset) {
+    let x1 = xScale(albums[0]) + xScale.bandwidth() / 2;
+    let y1 = yScale(albumMeans[0]) - verticalOffset;
+    let x2 = xScale(albums[albums.length - 1]) + xScale.bandwidth() / 2;
+    let y2 = yScale(albumMeans[albums.length - 1]) - verticalOffset;
+
+    pathData = [{x1, y1, x2, y2}];
+
+    svg.append("g")
+        .selectAll("line")
+        .data(pathData)
+        .enter()
+        .append("line")
+        .attr("x1", d => d.x1)
+        .attr("y1", d => d.y1)
+        .attr("x2", d => d.x2)
+        .attr("y2", d => d.y2)
+        .attr("stroke", "gray")
+        .attr("stroke-width", 2)
+        .attr("stroke-dasharray", "5,3");
+}
+
+function updateAlbumChartAnnotations(svg, feature, xScale, yScale, albumMeans) {
+    const verticalOffset = 25;
+    const hasAnnotationPath = ["energy", "valence", "tempo"]
+    
+    const annotationLabels = {
+        "energy": "Gradual increase in energy across albums, but consistently around 0.3",
+        "danceability": "Danceability peaks in the second album, but consistently medium-high around 0.6",
+        "valence": "Gradual increase in valence across albums, but consistently around 0.3",
+        "acousticness": "Steep drop in acousticness in third album, shifting from around 0.65 to 0.40 between the second and third album",
+        "speechiness": "Steep drop in speechiness in second album, with overall decreasing trend across albums from around 0.20 to 0.05",
+        "tempo": "Gradual increase in tempo across albums, ranging between around 100 to 120 bpm"
+    };
+
+    const callouts = {
+        "energy": [{
+            type: d3.annotationLabel,
+            note: {
+                label: annotationLabels["energy"],
+                bgPadding: 20,
+            },
+            x: xScale(albums[1]) + xScale.bandwidth() / 2,
+            y: yScale(albumMeans[1]) - verticalOffset,
+            dy: -50,
+            dx: 25,
+            color: "gray",
+        }],
+        "danceability": [{
+            type: d3.annotationCallout,
+            note: {
+                label: annotationLabels["danceability"],
+                bgPadding: 20,
+            },
+            x: xScale(albums[1]) + xScale.bandwidth() / 2,
+            y: yScale(albumMeans[1]),
+            dy: -50,
+            dx: 25,
+            color: "gray",
+        }],
+        "valence": [{
+            type: d3.annotationLabel,
+            note: {
+                label: annotationLabels["valence"],
+                bgPadding: 20,
+            },
+            x: xScale(albums[1]) + xScale.bandwidth() / 2,
+            y: yScale(albumMeans[1]) - verticalOffset - 5,
+            dy: -50,
+            dx: 50,
+            color: "gray",
+        }],
+        "acousticness": [{
+            type: d3.annotationCallout,
+            note: {
+                label: annotationLabels["acousticness"],
+                bgPadding: 50,
+            },
+            x: xScale(albums[2]) + xScale.bandwidth() / 2,
+            y: yScale(albumMeans[2]),
+            dy: -130,
+            dx: -50,
+            color: "gray",
+        }],
+        "speechiness": [{
+            type: d3.annotationCallout,
+            note: {
+                label: annotationLabels["speechiness"],
+                bgPadding: 20,
+            },
+            x: xScale(albums[1]) + xScale.bandwidth() / 2,
+            y: yScale(albumMeans[1]),
+            dy: -70,
+            dx: -10,
+            color: "gray",
+        }],
+        "tempo": [{
+            type: d3.annotationLabel,
+            note: {
+                label: annotationLabels["tempo"],
+                bgPadding: 20,
+            },
+            x: xScale(albums[1]) + xScale.bandwidth() / 2,
+            y: yScale(albumMeans[1]) - verticalOffset - 10,
+            dy: -50,
+            dx: 50,
+            color: "gray",
+        }],
+    };
+
+    svg.append("g")
+        .attr("class", "annotation")
+        .call(d3.annotation().annotations(callouts[feature]));
+
+    if (hasAnnotationPath.includes(feature)) {
+        drawAlbumPath(svg, xScale, yScale, albumMeans, verticalOffset);
+    }
 }
 
 // main visualization function
